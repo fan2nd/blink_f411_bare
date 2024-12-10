@@ -16,17 +16,6 @@ global_asm!(
     "#
 );
 
-global_asm!(
-    r#"
-    .section .text
-    .global read_reg_asm
-    .type read_reg_asm, function
-    read_reg_asm:
-        ldr r0, [r0]
-        bx lr
-    .size read_reg_asm, . - read_reg_asm
-    "#
-);
 extern "C" {
     fn _start();
     fn _stack_start();
@@ -62,13 +51,10 @@ const GPIOC_MODER: usize = GPIOC_BASE + 0x00;
 const GPIOC_BSRR: usize = GPIOC_BASE + 0x18;
 
 fn read_reg(addr: usize) -> usize {
-    extern "C" {
-        fn read_reg_asm(addr: usize) -> usize;
-    }
-    unsafe { read_reg_asm(addr) }
+    unsafe { core::ptr::read_volatile(addr as *const usize) }
 }
 fn write_reg(addr: usize, value: usize) {
-    unsafe { core::arch::asm!("str r1, [r0]", in("r0") addr, in("r1") value) }
+    unsafe { core::ptr::write_volatile(addr as *mut usize, value) }
 }
 
 fn init_pa0_as_input() {
